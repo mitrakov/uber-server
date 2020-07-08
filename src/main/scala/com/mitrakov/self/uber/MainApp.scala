@@ -22,7 +22,7 @@ object MainApp extends IOApp {
   def createApp: HttpApp[IO] = {
     val dsl = new Http4sDsl[IO] {}
     import dsl._
-    import org.http4s.implicits._
+    import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 
     val rootService = HttpRoutes.of[IO] {
       case GET -> Root / "hello" => Ok(s"ok")
