@@ -12,6 +12,8 @@ object MainApp extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
     import cats.syntax.functor.toFunctorOps
 
+    //println(Calculator.distance(59.88469528, 30.35969317, 59.88633709, 30.33099622))
+
     val app: HttpApp[IO] = createApp
     val loggedApp: HttpApp[IO] = Logger.httpApp(logHeaders = true, logBody = true)(app)
     val server = createServer(loggedApp)
@@ -23,9 +25,14 @@ object MainApp extends IOApp {
     val dsl = new Http4sDsl[IO] {}
     import dsl._
     import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
+    import org.http4s.circe.CirceEntityCodec._
 
     val rootService = HttpRoutes.of[IO] {
-      case GET -> Root / "hello" => Ok(s"ok")
+      case req @ POST -> Root / "tariff" =>
+        for {
+          coords <- req.as[Coordinates]
+          resp <- Ok(Calculator.getPrices(coords))
+        } yield resp
     }
 
     Router("/" -> rootService).orNotFound
