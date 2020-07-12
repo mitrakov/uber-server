@@ -1,0 +1,27 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: uber
+  namespace: tomsther
+spec:
+  selector:
+    matchLabels:
+      app: uber-label
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: uber-label
+    spec:
+      containers:
+        - name: uber
+          image: mitrakov/uber-server
+          imagePullPolicy: Always
+          ports:
+            - name: uber-port
+              containerPort: 8080
+              protocol: TCP
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi

@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: uber-service
+  namespace: tomsther
+  labels:
+    app: uber-label
+spec:
+  type: NodePort
+  ports:
+    - name: uber-port
+      protocol: TCP
+      port: 8080
+      targetPort: 8080
+      nodePort: 30001
+  selector:
+    app: uber-label

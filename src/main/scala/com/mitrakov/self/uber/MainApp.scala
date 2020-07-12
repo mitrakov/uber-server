@@ -39,6 +39,6 @@ object MainApp extends IOApp {
   }
 
   def createServer(app: HttpApp[IO]): Stream[IO, ExitCode] = {
-    BlazeServerBuilder[IO].bindHttp(30001, "0.0.0.0").withHttpApp(app).serve
+    BlazeServerBuilder[IO].bindHttp(8080, "0.0.0.0").withHttpApp(app).serve
   }
 }
