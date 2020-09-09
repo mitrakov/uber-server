@@ -1,13 +1,13 @@
 package com.mitrakov.self.uber
 
 import cats.effect.{Concurrent, ConcurrentEffect, ContextShift, ExitCode, IO, IOApp, Timer}
+import com.mitrakov.self.uber.yandex.{CommonResponse, Token, YandexPay}
 import org.http4s.{HttpApp, HttpRoutes}
 import org.http4s.dsl.Http4sDsl
 import org.http4s.server.Router
 import org.http4s.server.middleware.Logger
 import fs2.Stream
 import org.http4s.server.blaze.BlazeServerBuilder
-import scala.language.higherKinds
 
 object MainApp extends IOApp {
   override def run(args: List[String]): IO[ExitCode] = {
@@ -28,6 +28,7 @@ object MainApp extends IOApp {
     import cats.implicits.toFunctorOps
 
     val rootService = HttpRoutes.of[F] {
+      case GET -> Root / "version" => Ok("1.0.1")
       case req @ POST -> Root / "tariff" =>
         for {
           coords <- req.as[Coordinates]
@@ -35,9 +36,12 @@ object MainApp extends IOApp {
         } yield resp
       case req @ POST -> Root / "payment" =>
         for {
-          token <- req.as[YaToken]
+          token <- req.as[Token]
           result <- YandexPay.sendPayment(token)
-          resp <- Ok(result.body.toString)
+          resp <- result.body match {
+            case Right(paymentResponse) => Ok(CommonResponse(paymentResponse.confirmation.confirmation_url.getOrElse("")))
+            case Left(err) => BadRequest(CommonResponse("", 1, err.getMessage))
+          }
         } yield resp
     }
 

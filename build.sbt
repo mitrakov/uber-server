@@ -12,8 +12,13 @@ libraryDependencies ++= Seq(
   "org.http4s"    %% "http4s-circe"        % http4sVersion,
   "com.softwaremill.sttp.client" %% "core" % sttpVersion,
   "com.softwaremill.sttp.client" %% "circe" % sttpVersion,
-  "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % sttpVersion % "provided",
+  "com.softwaremill.sttp.client" %% "async-http-client-backend-cats" % sttpVersion,
   "io.circe"      %% "circe-generic"       % "0.13.0",
   "ch.qos.logback" % "logback-classic" % "1.1.3" % Runtime,
   "org.scalatest" %% "scalatest" % "3.2.0" % Test,
 )
+
+assemblyMergeStrategy in assembly := {
+  case PathList("META-INF", _*) => MergeStrategy.discard
+  case _ => MergeStrategy.first
+}

@@ -17,6 +17,12 @@ spec:
         - name: uber
           image: mitrakov/uber-server
           imagePullPolicy: Always
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: uber-secret
+                  key: secret-key
           ports:
             - name: uber-port
               containerPort: 8080
