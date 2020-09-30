@@ -28,7 +28,7 @@ object MainApp extends IOApp {
     import cats.implicits.toFunctorOps
 
     val rootService = HttpRoutes.of[F] {
-      case GET -> Root / "version" => Ok("1.0.1")
+      case GET -> Root / "version" => Ok("1.0.2")
       case req @ POST -> Root / "tariff" =>
         for {
           coords <- req.as[Coordinates]
@@ -39,8 +39,8 @@ object MainApp extends IOApp {
           token <- req.as[Token]
           result <- YandexPay.sendPayment(token)
           resp <- result.body match {
-            case Right(paymentResponse) => Ok(CommonResponse(paymentResponse.confirmation.confirmation_url.getOrElse("")))
-            case Left(err) => BadRequest(CommonResponse("", 1, err.getMessage))
+            case Right(paymentResponse) => Ok(CommonResponse(paymentResponse.confirmation.flatMap(_.confirmation_url).getOrElse("")))
+            case Left(err) => sys.error(err.getMessage); BadRequest(CommonResponse("", 1, err.getMessage))
           }
         } yield resp
     }

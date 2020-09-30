@@ -21,7 +21,7 @@ package object yandex {
                               status: String,
                               paid: Boolean,
                               amount: Amount,
-                              confirmation: Confirmation,
+                              confirmation: Option[Confirmation],
                               created_at: OffsetDateTime,
                               description: Option[String],
                               metadata: Option[Metadata],
