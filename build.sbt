@@ -27,4 +27,4 @@ assemblyMergeStrategy in assembly := {
 }
 
 // publish settings
-publishTo := Some("Trix" at "https://mymavenrepo.com/repo/81Ab7uIF2XWySZknUPdN/")
+publishTo in ThisBuild := Some("Trix" at "https://mymavenrepo.com/repo/81Ab7uIF2XWySZknUPdN/")
