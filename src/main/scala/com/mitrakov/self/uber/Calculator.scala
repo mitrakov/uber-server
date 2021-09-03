@@ -11,7 +11,7 @@ object Calculator {
     val black = 252.8
     val lux = 617.1
     val van = 292.5
-    val kids = 111.1
+    val kids = 117.1
 
     mutable.LinkedHashMap(
       "UberX" -> (distance * uberX).toInt,
