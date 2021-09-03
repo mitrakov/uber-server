@@ -18,7 +18,13 @@ libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.2.0" % Test,
 )
 
+// sbt-assembly plugin settings
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", _*) => MergeStrategy.discard
-  case _ => MergeStrategy.first
+  case "application.conf"       => MergeStrategy.concat
+  case "reference.conf"         => MergeStrategy.concat
+  case _                        => MergeStrategy.first
 }
+
+// publish settings
+publishTo := Some("Trix" at "https://mymavenrepo.com/repo/81Ab7uIF2XWySZknUPdN/")
