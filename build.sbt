@@ -1,3 +1,6 @@
+import sbtrelease.ReleaseStateTransformations._
+import sbtrelease.{Version, versionFormatError}
+
 name := "uber-server"
 organization := "com.mitrakov.self"
 scalaVersion := "2.13.1"
@@ -26,4 +29,26 @@ assemblyMergeStrategy in assembly := {
 }
 
 // publish settings
-publishTo in ThisBuild := Some("Trix" at "https://mymavenrepo.com/repo/81Ab7uIF2XWySZknUPdN/")
+val repository = "Trix" at "https://mymavenrepo.com/repo/81Ab7uIF2XWySZknUPdN/"
+publishTo in ThisBuild := Some(repository)
+
+// release plugin
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,              // : ReleaseStep
+  inquireVersions,                        // : ReleaseStep
+  runClean,                               // : ReleaseStep
+  runTest,                                // : ReleaseStep
+  releaseStepTask(mimaReportBinaryIssues),
+  setReleaseVersion,                      // : ReleaseStep
+  commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
+  tagRelease,                             // : ReleaseStep
+  publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
+  setNextVersion,                         // : ReleaseStep
+  commitNextVersion,                      // : ReleaseStep
+  pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
+)
+
+// mima plugin
+resolvers += repository
+def previousVersion(v: String): String = Version(v) map (_.withoutQualifier.string) getOrElse versionFormatError(v)
+mimaPreviousArtifacts := Set(organization.value %% moduleName.value % previousVersion(version.value))
