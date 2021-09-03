@@ -1,6 +1,5 @@
 name := "uber-server"
 organization := "com.mitrakov.self"
-version := "1.0.3"
 scalaVersion := "2.13.1"
 
 val http4sVersion = "0.21.1"

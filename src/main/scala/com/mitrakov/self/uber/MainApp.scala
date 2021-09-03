@@ -28,6 +28,7 @@ object MainApp extends IOApp {
     import cats.implicits.toFunctorOps
 
     val rootService = HttpRoutes.of[F] {
+      case GET -> Root / "health" => Ok("ok")
       case GET -> Root / "version" => Ok("1.0.3")
       case req @ GET -> Root / "headers" => Ok(req.headers.toList.map(h => s"${h.name}:${h.value}").mkString("Headers: ",",",""))
       case req @ POST -> Root / "tariff" =>
