@@ -30,7 +30,8 @@ object Release {
       case ZeroVersion => st.log.info(s"Fuck: $version"); st
       case version =>
         st.log.info(s"Starting Mima plugin to check current build with version $version")
-        releaseStepTask(mimaReportBinaryIssues)(st)
+        val newState = reapply(Seq(mimaPreviousArtifacts := Set(organization.value %% moduleName.value % version)), st)
+        releaseStepTask(mimaReportBinaryIssues)(newState)
     }
   }
 
