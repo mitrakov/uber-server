@@ -1,4 +1,5 @@
 import sbtrelease.ReleaseStateTransformations._
+import sbtrelease.Utilities.stateW
 import sbtrelease.{Version, versionFormatError}
 
 name := "uber-server"
@@ -33,11 +34,36 @@ val repository = "Trix" at "https://mymavenrepo.com/repo/81Ab7uIF2XWySZknUPdN/"
 publishTo in ThisBuild := Some(repository)
 
 // release plugin
+//lazy val setReleaseVersion: ReleaseStep = setVersion(_._1)
+//lazy val setNextVersion: ReleaseStep = setVersion(_._2)
+lazy val setOldVersion: ReleaseStep = { st: State =>
+  val globalVersionString = """ThisBuild / version := "%s""""
+  val versionString = """version := "%s""""
+  //val vs: (String, String) = st.get(versions).getOrElse(sys.error("No versions are set! Was this release part executed before inquireVersions?")) // 1.0.6 -> 1.0.7-SNAPSHOT
+  //val selected = selectVersion(vs)
+
+  val useGlobal = st.extract.get(releaseUseGlobalVersion)
+  val selected = st.extract.get(if (useGlobal) ThisBuild / version else version)
+  st.log.info("Setting OLD version to '%s'." format selected)
+  val versionStr = (if (useGlobal) globalVersionString else versionString) format selected
+  //val file = st.extract.get(releaseVersionFile)
+  //IO.writeLines(file, Seq(versionStr))
+  val baseDir = st.extract.get(baseDirectory)
+  val file = baseDir / "previous_version.sbt"
+  IO.writeLines(file, List(versionStr))
+
+  //reapply(Seq(if (useGlobal) ThisBuild / version := selected else version := selected), st)
+  st
+}
+
+
+
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,              // : ReleaseStep
   inquireVersions,                        // : ReleaseStep
   runClean,                               // : ReleaseStep
   runTest,                                // : ReleaseStep
+  setOldVersion,
   releaseStepTask(mimaReportBinaryIssues),
   setReleaseVersion,                      // : ReleaseStep
   commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
