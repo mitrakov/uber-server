@@ -34,29 +34,31 @@ assemblyMergeStrategy in assembly := {
 
 // publish settings
 val repository = "Trix" at "https://mymavenrepo.com/repo/81Ab7uIF2XWySZknUPdN/"
-publishTo in ThisBuild := Some(repository)
+resolvers += repository
+ThisBuild / publishTo := Some(repository)
 
 // release plugin
 val ZeroVersion = "0.0.0"
 val previousVersion = SettingKey[String]("previousVersion", "Previous version string for Mima plugin")
 val previousVersionFile = SettingKey[File]("previousVersionFile", "Previous version file for Mima plugin")
 previousVersion := ZeroVersion
-previousVersionFile := baseDirectory.value / "previous_version.sbt"
+previousVersionFile := baseDirectory.value / "previous_version"
 
-//val readPreviousVersion: ReleaseStep = { st: State =>
-//  val file = st.extract.get(previousVersionFile)
-//  if (file.exists()) {
-//    val version = IO.readLines(file).headOption getOrElse ZeroVersion
-//    st.log.info(s"Previous version found: $version")
-//    reapply(Seq(previousVersion := version), st)
-//  } else st
-//}
+val readPreviousVersion: ReleaseStep = { st: State =>
+  val file = st.extract.get(previousVersionFile)
+  if (file.exists()) {
+    val version = IO.readLines(file).headOption getOrElse ZeroVersion
+    st.log.info(s"Previous version found: $version")
+    reapply(Seq(previousVersion := version), st)
+  } else st
+}
 
 val checkBinaryIncompatibilities: ReleaseStep = { st: State =>
   st.extract.get(previousVersion) match {
     case ZeroVersion => st
     case version =>
       st.log.info(s"Starting Mima plugin to check current build with version $version")
+      mimaPreviousArtifacts := Set(organization.value %% moduleName.value % version)
       releaseStepTask(mimaReportBinaryIssues)(st)
   }
 }
@@ -67,9 +69,7 @@ val setPreviousVersion: ReleaseStep = { st: State =>
 
   st.log.info(s"Setting previous version to '$current'")
   val file = st.extract.get(previousVersionFile)
-  val useGlobal = st.extract.get(releaseUseGlobalVersion)
-  val content = if (useGlobal) s"""ThisBuild / previousVersion := "$current"""" else s"""previousVersion := "$current""""
-  IO.writeLines(file, List(content))
+  IO.writeLines(file, List(current))
   st
 }
 
@@ -102,7 +102,7 @@ releaseProcess := Seq[ReleaseStep](
   inquireVersions,                        // : ReleaseStep
   runClean,                               // : ReleaseStep
   runTest,                                // : ReleaseStep
-  //readPreviousVersion,
+  readPreviousVersion,
   checkBinaryIncompatibilities,
   setPreviousVersion,
   commitPreviousVersion,
@@ -114,7 +114,3 @@ releaseProcess := Seq[ReleaseStep](
   commitNextVersion,                      // : ReleaseStep
   pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
 )
-
-// mima plugin
-resolvers += repository
-mimaPreviousArtifacts := Set(organization.value %% moduleName.value % previousVersion.value)
