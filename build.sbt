@@ -1,7 +1,8 @@
 import sbt.Package.ManifestAttributes
+import sbtrelease.ReleasePlugin.autoImport.ReleaseKeys.versions
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.Utilities.stateW
-import sbtrelease.{Vcs, Version, Versions, versionFormatError}
+import sbtrelease.Vcs
 
 import scala.sys.process.ProcessLogger
 
@@ -40,23 +41,23 @@ publishTo in ThisBuild := Some(repository)
 //lazy val setReleaseVersion: ReleaseStep = setVersion(_._1)
 //lazy val setNextVersion: ReleaseStep = setVersion(_._2)
 lazy val setPreviousVersion: ReleaseStep = { st: State =>
-  val globalVersionString = """ThisBuild / version := "%s""""
-  val versionString = """version := "%s""""
-  val versions = AttributeKey[Versions]("releaseVersions")
+  //val globalVersionString = """ThisBuild / version := "%s""""
+  //val versionString = """version := "%s""""
+  //val versions = AttributeKey[Versions]("releaseVersions")
   val vs: (String, String) = st.get(versions).getOrElse(sys.error("No versions are set! Was this release part executed before inquireVersions?")) // 1.0.6 -> 1.0.7-SNAPSHOT
   //val currentSnapshot = selectVersion(vs)
   val current = vs._1
 
-  val useGlobal = st.extract.get(releaseUseGlobalVersion)
+  //val useGlobal = st.extract.get(releaseUseGlobalVersion)
   //val curreentSnapshot: String = st.extract.get(if (useGlobal) ThisBuild / version else version)
   //val current: String = Version(currentSnapshot) map (_.withoutQualifier.string) getOrElse versionFormatError(currentSnapshot)
   st.log.info("Setting OLD version to '%s'." format current)
-  val versionStr = (if (useGlobal) globalVersionString else versionString) format current
+  //val versionStr = (if (useGlobal) globalVersionString else versionString) format current
   //val file = st.extract.get(releaseVersionFile)
   //IO.writeLines(file, Seq(versionStr))
   val baseDir = st.extract.get(baseDirectory)
   val file = baseDir / "previous_version.sbt"
-  IO.writeLines(file, List(versionStr))
+  IO.writeLines(file, List(current))
 
   //val hhh = st.extract.(ReleasePlugin.runtimeVersion)
   //reapply(Seq(if (useGlobal) ThisBuild / version := current else version := current), st)
@@ -104,15 +105,26 @@ def commitVersion: (State, TaskKey[String]) => State = { (st: State, commitMessa
 }
 // === eof commit
 
+// read version
+val previousVersion = TaskKey[String]("previousVersion")
+def readPreviousVersion: ReleaseStep = { st: State =>
+  val baseDir = st.extract.get(baseDirectory)
+  val file = (baseDir / "previous_version.sbt").getCanonicalFile
+  val v = IO.readLines(file).head // TODO
+  previousVersion := v
+  st
+}
+// === eof read v
+
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,              // : ReleaseStep
   inquireVersions,                        // : ReleaseStep
   runClean,                               // : ReleaseStep
   runTest,                                // : ReleaseStep
-// releaseStepTask(mimaReportBinaryIssues),
+  readPreviousVersion,
+  releaseStepTask(mimaReportBinaryIssues),
   setPreviousVersion,
   commitPreviousVersion,
-  releaseStepTask(mimaReportBinaryIssues),
   setReleaseVersion,                      // : ReleaseStep
   commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
   tagRelease,                             // : ReleaseStep
@@ -124,5 +136,5 @@ releaseProcess := Seq[ReleaseStep](
 
 // mima plugin
 resolvers += repository
-def previousVersion(v: String): String = Version(v) map (_.withoutQualifier.string) getOrElse versionFormatError(v)
-mimaPreviousArtifacts := Set(organization.value %% moduleName.value % previousVersion(version.value))
+//def previousVersion(v: String): String = Version(v) map (_.withoutQualifier.string) getOrElse versionFormatError(v)
+mimaPreviousArtifacts := Set(organization.value %% moduleName.value % previousVersion.value)
