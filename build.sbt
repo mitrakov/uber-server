@@ -107,6 +107,7 @@ def commitVersion: (State, TaskKey[String]) => State = { (st: State, commitMessa
 
 // read version
 val previousVersion = SettingKey[String]("previousVersion", "Prev version")
+previousVersion := "0.0.0"
 def readPreviousVersion: ReleaseStep = { st: State =>
   val baseDir = st.extract.get(baseDirectory)
   val file = (baseDir / "previous_version").getCanonicalFile
