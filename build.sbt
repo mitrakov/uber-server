@@ -37,22 +37,23 @@ val repository = "Trix" at "https://mymavenrepo.com/repo/81Ab7uIF2XWySZknUPdN/"
 publishTo in ThisBuild := Some(repository)
 
 // release plugin
+val ZeroVersion = "0.0.0"
 val previousVersion = SettingKey[String]("previousVersion", "Prev version")
 val previousVersionFile = SettingKey[File]("previousVersionFile", "Prev version file")
-previousVersion := "0.0.0"
+previousVersion := ZeroVersion
 previousVersionFile := baseDirectory.value / "previous_version"
 
 val readPreviousVersion: ReleaseStep = { st: State =>
   val file = st.extract.get(previousVersionFile)
   if (file.exists()) {
-    val v = IO.readLines(file).headOption getOrElse "0.0.0"
+    val v = IO.readLines(file).headOption getOrElse ZeroVersion
     reapply(Seq(previousVersion := v), st)
   } else st
 }
 
 val checkBinaryIncompatibilities: ReleaseStep = { st: State =>
   st.extract.get(previousVersion) match {
-    case "0.0.0" => st
+    case ZeroVersion => st
     case _ => releaseStepTask(mimaReportBinaryIssues)(st)
   }
 }
