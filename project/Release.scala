@@ -1,34 +1,20 @@
-import com.typesafe.tools.mima.plugin.MimaPlugin.autoImport.{mimaPreviousArtifacts, mimaReportBinaryIssues}
-import sbt.Keys._
 import sbt._
+import sbt.Keys.{baseDirectory, moduleName, organization, packageOptions}
 import sbt.Package.ManifestAttributes
 import sbtrelease.ReleasePlugin.autoImport.ReleaseKeys.versions
-import sbtrelease.ReleasePlugin.autoImport._
+import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, releaseProcess, releaseStepTask, releaseVcs, releaseVcsSign, releaseVcsSignOff}
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.Utilities.stateW
+import com.typesafe.tools.mima.plugin.MimaPlugin.autoImport.{mimaPreviousArtifacts, mimaReportBinaryIssues}
 import scala.sys.process.ProcessLogger
 
 object Release {
-  private val ZeroVersion = "0.0.0"
-  val previousVersion = SettingKey[String]("previousVersion", "Previous version string for Mima plugin")
-  //val previousVersionFile = SettingKey[File]("previousVersionFile", "Previous version file for Mima plugin")
-  previousVersion := ZeroVersion
-  //previousVersionFile := baseDirectory.value / "previous_version.sbt"
-
-//  val readPreviousVersion: ReleaseStep = { st: State =>
-//    st.log.info(s"AAAAAAAA hey hey hey")
-//    val file = st.extract.get(previousVersionFile)
-//    if (file.exists()) {
-//      val version = IO.readLines(file).headOption getOrElse sys.error(s"Cannot read $file")
-//      st.log.info(s"Previous version found: $version")
-//      reapply(Seq(mimaPreviousArtifacts := Set(organization.value %% moduleName.value % version)), st)
-//    } else st
-//  }
+  val previousVersion = SettingKey[String]("previousVersion", "Previous version for Mima plugin")
 
   val checkBinaryIncompatibilities: ReleaseStep = { st: State =>
-    st.extract.get(previousVersion) match {
-      case ZeroVersion => st.log.info(s"Fuck: $version"); st
-      case version =>
+    st.extract.getOpt(previousVersion) match {
+      case None => st
+      case Some(version) =>
         st.log.info(s"Starting Mima plugin to check current build with version $version")
         val newState = reapply(Seq(mimaPreviousArtifacts := Set(organization.value %% moduleName.value % version)), st)
         releaseStepTask(mimaReportBinaryIssues)(newState)
@@ -52,8 +38,8 @@ object Release {
       override def out(s: => String): Unit = st.log.info(s)
       override def buffer[T](f: => T): T = st.log.buffer(f)
     }
-    val bdir = st.extract.get(baseDirectory)
-    val file = (bdir / "previous_version.sbt").getCanonicalFile
+    val fileBaseDir = st.extract.get(baseDirectory)
+    val file = (fileBaseDir / "previous_version.sbt").getCanonicalFile
     val base = vcs.baseDir.getCanonicalFile
     val sign = st.extract.get(releaseVcsSign)
     val signOff = st.extract.get(releaseVcsSignOff)
@@ -72,20 +58,20 @@ object Release {
 
   val settings: Seq[Def.Setting[_]] = Seq(
     releaseProcess := Seq[ReleaseStep](
-      checkSnapshotDependencies,              // : ReleaseStep
-      inquireVersions,                        // : ReleaseStep
-      runClean,                               // : ReleaseStep
-      runTest,                                // : ReleaseStep
-      checkBinaryIncompatibilities,
-      setPreviousVersion,
-      commitPreviousVersion,
-      setReleaseVersion,                      // : ReleaseStep
-      commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
-      tagRelease,                             // : ReleaseStep
-      publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
-      setNextVersion,                         // : ReleaseStep
-      commitNextVersion,                      // : ReleaseStep
-      pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
+      checkSnapshotDependencies,
+      inquireVersions,
+      runClean,
+      runTest,
+      checkBinaryIncompatibilities, // <- extra step
+      setPreviousVersion,           // <- extra step
+      commitPreviousVersion,        // <- extra step
+      setReleaseVersion,
+      commitReleaseVersion,
+      tagRelease,
+      publishArtifacts,
+      setNextVersion,
+      commitNextVersion,
+      pushChanges
     )
   )
 }
