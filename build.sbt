@@ -110,10 +110,9 @@ val previousVersion = SettingKey[String]("previousVersion", "Prev version")
 previousVersion := "0.0.0"
 def readPreviousVersion: ReleaseStep = { st: State =>
   val baseDir = st.extract.get(baseDirectory)
-  val file = (baseDir / "previous_version").getCanonicalFile
+  val file = baseDir / "previous_version"
   val v = IO.readLines(file).head // TODO
-  previousVersion := v
-  st
+  reapply(Seq(previousVersion := v), st)
 }
 // === eof read v
 
