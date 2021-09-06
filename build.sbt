@@ -56,7 +56,7 @@ lazy val setPreviousVersion: ReleaseStep = { st: State =>
   //val file = st.extract.get(releaseVersionFile)
   //IO.writeLines(file, Seq(versionStr))
   val baseDir = st.extract.get(baseDirectory)
-  val file = baseDir / "previous_version.sbt"
+  val file = baseDir / "previous_version"
   IO.writeLines(file, List(current))
 
   //val hhh = st.extract.(ReleasePlugin.runtimeVersion)
@@ -86,7 +86,7 @@ lazy val commitPreviousVersion = ReleaseStep({ st: State =>
 def commitVersion: (State, TaskKey[String]) => State = { (st: State, commitMessage: TaskKey[String]) =>
   val log = toProcessLogger(st)
   val baseDir = st.extract.get(baseDirectory)
-  val file = (baseDir / "previous_version.sbt").getCanonicalFile
+  val file = (baseDir / "previous_version").getCanonicalFile
   //val file = st.extract.get(releaseVersionFile).getCanonicalFile
   val base = vcs(st).baseDir.getCanonicalFile
   val sign = st.extract.get(releaseVcsSign)
@@ -106,10 +106,10 @@ def commitVersion: (State, TaskKey[String]) => State = { (st: State, commitMessa
 // === eof commit
 
 // read version
-val previousVersion = TaskKey[String]("previousVersion")
+val previousVersion = SettingKey[String]("previousVersion", "Prev version")
 def readPreviousVersion: ReleaseStep = { st: State =>
   val baseDir = st.extract.get(baseDirectory)
-  val file = (baseDir / "previous_version.sbt").getCanonicalFile
+  val file = (baseDir / "previous_version").getCanonicalFile
   val v = IO.readLines(file).head // TODO
   previousVersion := v
   st
