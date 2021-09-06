@@ -29,3 +29,5 @@ assemblyMergeStrategy in assembly := {
 val repository = "Trix" at "https://mymavenrepo.com/repo/81Ab7uIF2XWySZknUPdN/"
 resolvers += repository
 ThisBuild / publishTo := Some(repository)
+
+lazy val root = project.in(file(".")).settings(Release.settings)

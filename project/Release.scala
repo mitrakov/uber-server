@@ -1,7 +1,7 @@
 import com.typesafe.tools.mima.plugin.MimaPlugin.autoImport.{mimaPreviousArtifacts, mimaReportBinaryIssues}
 import sbt.Keys._
-import sbt.Package.ManifestAttributes
 import sbt._
+import sbt.Package.ManifestAttributes
 import sbtrelease.ReleasePlugin.autoImport.ReleaseKeys.versions
 import sbtrelease.ReleasePlugin.autoImport._
 import sbtrelease.ReleaseStateTransformations._
@@ -67,21 +67,23 @@ object Release {
     reapply(Seq(packageOptions += ManifestAttributes("Vcs-Release-Hash" -> vcs.currentHash)), st)
   }
 
-  releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies,              // : ReleaseStep
-    inquireVersions,                        // : ReleaseStep
-    runClean,                               // : ReleaseStep
-    runTest,                                // : ReleaseStep
-    readPreviousVersion,
-    checkBinaryIncompatibilities,
-    setPreviousVersion,
-    commitPreviousVersion,
-    setReleaseVersion,                      // : ReleaseStep
-    commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
-    tagRelease,                             // : ReleaseStep
-    publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
-    setNextVersion,                         // : ReleaseStep
-    commitNextVersion,                      // : ReleaseStep
-    pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
+  val settings: Seq[Def.Setting[_]] = Seq(
+    releaseProcess := Seq[ReleaseStep](
+      checkSnapshotDependencies,              // : ReleaseStep
+      inquireVersions,                        // : ReleaseStep
+      runClean,                               // : ReleaseStep
+      runTest,                                // : ReleaseStep
+      readPreviousVersion,
+      checkBinaryIncompatibilities,
+      setPreviousVersion,
+      commitPreviousVersion,
+      setReleaseVersion,                      // : ReleaseStep
+      commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
+      tagRelease,                             // : ReleaseStep
+      publishArtifacts,                       // : ReleaseStep, checks whether `publishTo` is properly set up
+      setNextVersion,                         // : ReleaseStep
+      commitNextVersion,                      // : ReleaseStep
+      pushChanges                             // : ReleaseStep, also checks that an upstream branch is properly configured
+    )
   )
 }
