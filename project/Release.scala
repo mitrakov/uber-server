@@ -13,7 +13,7 @@ object Release {
 
   val checkBinaryIncompatibilities: ReleaseStep = { st: State =>
     st.extract.getOpt(previousVersion) match {
-      case None => st.log.info("FUCK!"); st
+      case None => st
       case Some(version) =>
         st.log.info(s"Starting Mima plugin to check current build with version $version")
         val newState = reapply(Seq(mimaPreviousArtifacts := Set(organization.value %% moduleName.value % version)), st)
