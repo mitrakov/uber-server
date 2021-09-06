@@ -9,27 +9,28 @@ import sbtrelease.Utilities.stateW
 import scala.sys.process.ProcessLogger
 
 object Release {
+  private val ZeroVersion = "0.0.0"
   val previousVersion = SettingKey[String]("previousVersion", "Previous version string for Mima plugin")
   val previousVersionFile = SettingKey[File]("previousVersionFile", "Previous version file for Mima plugin")
-  previousVersion := "0.0.0"
+  previousVersion := ZeroVersion
   previousVersionFile := baseDirectory.value / "previous_version.sbt"
 
-  val readPreviousVersion: ReleaseStep = { st: State =>
-    st.log.info(s"AAAAAAAA hey hey hey")
-    val file = st.extract.get(previousVersionFile)
-    if (file.exists()) {
-      val version = IO.readLines(file).headOption getOrElse sys.error(s"Cannot read $file")
-      st.log.info(s"Previous version found: $version")
-      reapply(Seq(mimaPreviousArtifacts := Set(organization.value %% moduleName.value % version)), st)
-    } else st
-  }
+//  val readPreviousVersion: ReleaseStep = { st: State =>
+//    st.log.info(s"AAAAAAAA hey hey hey")
+//    val file = st.extract.get(previousVersionFile)
+//    if (file.exists()) {
+//      val version = IO.readLines(file).headOption getOrElse sys.error(s"Cannot read $file")
+//      st.log.info(s"Previous version found: $version")
+//      reapply(Seq(mimaPreviousArtifacts := Set(organization.value %% moduleName.value % version)), st)
+//    } else st
+//  }
 
   val checkBinaryIncompatibilities: ReleaseStep = { st: State =>
-    st.extract.get(mimaPreviousArtifacts).toList match {
-      case head :: _ =>
-        st.log.info(s"Starting Mima plugin to check current build with version ${head.revision}")
+    st.extract.get(previousVersion) match {
+      case ZeroVersion => st.log.info(s"Fuck: $version"); st
+      case version =>
+        st.log.info(s"Starting Mima plugin to check current build with version $version")
         releaseStepTask(mimaReportBinaryIssues)(st)
-      case _ => st
     }
   }
 
@@ -73,7 +74,6 @@ object Release {
       inquireVersions,                        // : ReleaseStep
       runClean,                               // : ReleaseStep
       runTest,                                // : ReleaseStep
-      readPreviousVersion,
       checkBinaryIncompatibilities,
       setPreviousVersion,
       commitPreviousVersion,
