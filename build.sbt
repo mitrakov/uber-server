@@ -68,7 +68,7 @@ val setPreviousVersion: ReleaseStep = { st: State =>
   st.log.info(s"Setting previous version to '$current'")
   val file = st.extract.get(previousVersionFile)
   val useGlobal = st.extract.get(releaseUseGlobalVersion)
-  val content = (if (useGlobal) globalVersionString else versionString) format current
+  val content = if (useGlobal) s"""ThisBuild / previousVersion := "$current"""" else s"""previousVersion := "$current""""
   IO.writeLines(file, List(content))
   st
 }
