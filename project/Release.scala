@@ -11,9 +11,9 @@ import scala.sys.process.ProcessLogger
 object Release {
   private val ZeroVersion = "0.0.0"
   val previousVersion = SettingKey[String]("previousVersion", "Previous version string for Mima plugin")
-  val previousVersionFile = SettingKey[File]("previousVersionFile", "Previous version file for Mima plugin")
+  //val previousVersionFile = SettingKey[File]("previousVersionFile", "Previous version file for Mima plugin")
   previousVersion := ZeroVersion
-  previousVersionFile := baseDirectory.value / "previous_version.sbt"
+  //previousVersionFile := baseDirectory.value / "previous_version.sbt"
 
 //  val readPreviousVersion: ReleaseStep = { st: State =>
 //    st.log.info(s"AAAAAAAA hey hey hey")
@@ -38,10 +38,10 @@ object Release {
   val setPreviousVersion: ReleaseStep = { st: State =>
     val version = st.get(versions).getOrElse(sys.error("This release step must be after inquireVersions"))._1
     st.log.info(s"Setting previous version to '$version'")
-    val file = st.extract.get(previousVersionFile)
+    val file = st.extract.get(baseDirectory)
     val content = s"""import Release._
                     |ThisBuild / previousVersion := "$version"""".stripMargin
-    IO.writeLines(file, List(content))
+    IO.writeLines(file / "previous_version.sbt", List(content))
     st
   }
 
@@ -52,7 +52,8 @@ object Release {
       override def out(s: => String): Unit = st.log.info(s)
       override def buffer[T](f: => T): T = st.log.buffer(f)
     }
-    val file = st.extract.get(previousVersionFile).getCanonicalFile
+    val bdir = st.extract.get(baseDirectory)
+    val file = (bdir / "previous_version.sbt").getCanonicalFile
     val base = vcs.baseDir.getCanonicalFile
     val sign = st.extract.get(releaseVcsSign)
     val signOff = st.extract.get(releaseVcsSignOff)
