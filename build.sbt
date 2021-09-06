@@ -38,23 +38,26 @@ publishTo in ThisBuild := Some(repository)
 
 // release plugin
 val ZeroVersion = "0.0.0"
-val previousVersion = SettingKey[String]("previousVersion", "Prev version")
-val previousVersionFile = SettingKey[File]("previousVersionFile", "Prev version file")
+val previousVersion = SettingKey[String]("previousVersion", "Previous version string for Mima plugin")
+val previousVersionFile = SettingKey[File]("previousVersionFile", "Previous version file for Mima plugin")
 previousVersion := ZeroVersion
 previousVersionFile := baseDirectory.value / "previous_version"
 
 val readPreviousVersion: ReleaseStep = { st: State =>
   val file = st.extract.get(previousVersionFile)
   if (file.exists()) {
-    val v = IO.readLines(file).headOption getOrElse ZeroVersion
-    reapply(Seq(previousVersion := v), st)
+    val version = IO.readLines(file).headOption getOrElse ZeroVersion
+    st.log.info(s"Previous version found: $version")
+    reapply(Seq(previousVersion := version), st)
   } else st
 }
 
 val checkBinaryIncompatibilities: ReleaseStep = { st: State =>
   st.extract.get(previousVersion) match {
     case ZeroVersion => st
-    case _ => releaseStepTask(mimaReportBinaryIssues)(st)
+    case version =>
+      st.log.info(s"Starting Mima plugin to check current build with version $version")
+      releaseStepTask(mimaReportBinaryIssues)(st)
   }
 }
 
@@ -79,13 +82,14 @@ val commitPreviousVersion: ReleaseStep = { st: State =>
   val base = vcs.baseDir.getCanonicalFile
   val sign = st.extract.get(releaseVcsSign)
   val signOff = st.extract.get(releaseVcsSignOff)
-  val relativePath = IO.relativize(base, file).getOrElse(s"Version file [$file] is outside of this VCS repository with base directory [$base]!")
+  val relativePath = IO.relativize(base, file).getOrElse(s"Version file [$file] is outside of this VCS repository with base directory [$base]")
 
   vcs.add(relativePath) !! log
   val status = vcs.status.!!.trim
   if (status.nonEmpty) {
     val prevVersion = st.extract.get(previousVersion)
     val message = s"Setting previous version to $prevVersion"
+    st.log.info(s"Preparing commit with message: $message")
     vcs.commit(message, sign, signOff) ! log
   }
   reapply(Seq(packageOptions += ManifestAttributes("Vcs-Release-Hash" -> vcs.currentHash)), st)
