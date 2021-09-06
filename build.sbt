@@ -1,6 +1,9 @@
+import sbt.Package.ManifestAttributes
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.Utilities.stateW
-import sbtrelease.{Version, Versions, versionFormatError}
+import sbtrelease.{Vcs, Version, Versions, versionFormatError}
+
+import scala.sys.process.ProcessLogger
 
 name := "uber-server"
 organization := "com.mitrakov.self"
@@ -36,7 +39,7 @@ publishTo in ThisBuild := Some(repository)
 // release plugin
 //lazy val setReleaseVersion: ReleaseStep = setVersion(_._1)
 //lazy val setNextVersion: ReleaseStep = setVersion(_._2)
-lazy val setOldVersion: ReleaseStep = { st: State =>
+lazy val setPreviousVersion: ReleaseStep = { st: State =>
   val globalVersionString = """ThisBuild / version := "%s""""
   val versionString = """version := "%s""""
   val versions = AttributeKey[Versions]("releaseVersions")
@@ -55,18 +58,60 @@ lazy val setOldVersion: ReleaseStep = { st: State =>
   val file = baseDir / "previous_version.sbt"
   IO.writeLines(file, List(versionStr))
 
+  //val hhh = st.extract.(ReleasePlugin.runtimeVersion)
   //reapply(Seq(if (useGlobal) ThisBuild / version := current else version := current), st)
   st
 }
 
+// === commit
+def toProcessLogger(st: State): ProcessLogger = new ProcessLogger {
+  override def err(s: => String): Unit = st.log.info(s)
+  override def out(s: => String): Unit = st.log.info(s)
+  override def buffer[T](f: => T): T = st.log.buffer(f)
+}
+def vcs(st: State): Vcs = {
+  st.extract.get(releaseVcs).getOrElse(sys.error("Aborting release. Working directory is not a repository of a recognized VCS."))
+}
 
+lazy val commitPreviousVersion = ReleaseStep({ st: State =>
+  val newState = commitVersion(st, releaseCommitMessage) // TODO
+  reapply(Seq[Setting[_]](
+    packageOptions += ManifestAttributes("Vcs-Release-Hash" -> vcs(st).currentHash)
+  ), newState)
+}, identity)
+
+//lazy val commitNextVersion = {st: State => commitVersion(st, releaseNextCommitMessage)}
+
+def commitVersion: (State, TaskKey[String]) => State = { (st: State, commitMessage: TaskKey[String]) =>
+  val log = toProcessLogger(st)
+  val baseDir = st.extract.get(baseDirectory)
+  val file = (baseDir / "previous_version.sbt").getCanonicalFile
+  //val file = st.extract.get(releaseVersionFile).getCanonicalFile
+  val base = vcs(st).baseDir.getCanonicalFile
+  val sign = st.extract.get(releaseVcsSign)
+  val signOff = st.extract.get(releaseVcsSignOff)
+  val relativePath = IO.relativize(base, file).getOrElse("Version file [%s] is outside of this VCS repository with base directory [%s]!" format(file, base))
+
+  vcs(st).add(relativePath) !! log
+  val status = vcs(st).status.!!.trim
+
+  val newState = if (status.nonEmpty) {
+    val (state, msg) = st.extract.runTask(commitMessage, st)
+    vcs(state).commit(msg, sign, signOff) ! log
+    state
+  } else st // nothing to commit. this happens if the version.sbt file hasn't changed.
+  newState
+}
+// === eof commit
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,              // : ReleaseStep
   inquireVersions,                        // : ReleaseStep
   runClean,                               // : ReleaseStep
   runTest,                                // : ReleaseStep
-  setOldVersion,
+// releaseStepTask(mimaReportBinaryIssues),
+  setPreviousVersion,
+  commitPreviousVersion,
   releaseStepTask(mimaReportBinaryIssues),
   setReleaseVersion,                      // : ReleaseStep
   commitReleaseVersion,                   // : ReleaseStep, performs the initial git checks
