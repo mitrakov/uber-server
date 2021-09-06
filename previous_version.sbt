@@ -1,2 +1,2 @@
 import Release._
-ThisBuild / previousVersion := "1.0.20"
+ThisBuild / previousVersion := "1.0.21"
