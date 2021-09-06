@@ -41,16 +41,16 @@ val ZeroVersion = "0.0.0"
 val previousVersion = SettingKey[String]("previousVersion", "Previous version string for Mima plugin")
 val previousVersionFile = SettingKey[File]("previousVersionFile", "Previous version file for Mima plugin")
 previousVersion := ZeroVersion
-previousVersionFile := baseDirectory.value / "previous_version"
+previousVersionFile := baseDirectory.value / "previous_version.sbt"
 
-val readPreviousVersion: ReleaseStep = { st: State =>
-  val file = st.extract.get(previousVersionFile)
-  if (file.exists()) {
-    val version = IO.readLines(file).headOption getOrElse ZeroVersion
-    st.log.info(s"Previous version found: $version")
-    reapply(Seq(previousVersion := version), st)
-  } else st
-}
+//val readPreviousVersion: ReleaseStep = { st: State =>
+//  val file = st.extract.get(previousVersionFile)
+//  if (file.exists()) {
+//    val version = IO.readLines(file).headOption getOrElse ZeroVersion
+//    st.log.info(s"Previous version found: $version")
+//    reapply(Seq(previousVersion := version), st)
+//  } else st
+//}
 
 val checkBinaryIncompatibilities: ReleaseStep = { st: State =>
   st.extract.get(previousVersion) match {
@@ -67,7 +67,9 @@ val setPreviousVersion: ReleaseStep = { st: State =>
 
   st.log.info(s"Setting previous version to '$current'")
   val file = st.extract.get(previousVersionFile)
-  IO.writeLines(file, List(current))
+  val useGlobal = st.extract.get(releaseUseGlobalVersion)
+  val content = (if (useGlobal) globalVersionString else versionString) format current
+  IO.writeLines(file, List(content))
   st
 }
 
@@ -100,7 +102,7 @@ releaseProcess := Seq[ReleaseStep](
   inquireVersions,                        // : ReleaseStep
   runClean,                               // : ReleaseStep
   runTest,                                // : ReleaseStep
-  readPreviousVersion,
+  //readPreviousVersion,
   checkBinaryIncompatibilities,
   setPreviousVersion,
   commitPreviousVersion,
