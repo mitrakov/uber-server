@@ -43,7 +43,7 @@ object Release {
     val base = vcs.baseDir.getCanonicalFile
     val sign = st.extract.get(releaseVcsSign)
     val signOff = st.extract.get(releaseVcsSignOff)
-    val relativePath = IO.relativize(base, file).getOrElse(s"Version file [$file] is outside of this VCS repository with base directory [$base]")
+    val relativePath = IO.relativize(base, file) getOrElse s"Version file [$file] is outside of this VCS repository with base directory [$base]"
 
     vcs.add(relativePath) !! log
     val status = vcs.status.!!.trim

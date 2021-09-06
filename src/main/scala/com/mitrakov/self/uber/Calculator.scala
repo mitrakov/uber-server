@@ -3,7 +3,7 @@ package com.mitrakov.self.uber
 import scala.collection.mutable
 
 object Calculator {
-  def getPrices(coords: Coordinates/*, discount: Double = 1.0*/): mutable.LinkedHashMap[String, Int] = {
+  def getPrices(coords: Coordinates, discount: Double = 1.0): mutable.LinkedHashMap[String, Int] = {
     val distance = getDistance(coords.lat1, coords.lon1, coords.lat2, coords.lon2)
     val uberX = 61.1
     val select = 128.2
@@ -11,7 +11,7 @@ object Calculator {
     val black = 252.8
     val lux = 617.1
     val van = 292.5
-    val kids = 117.1 //* discount
+    val kids = 117.1 * discount
 
     mutable.LinkedHashMap(
       "UberX" -> (distance * uberX).toInt,
