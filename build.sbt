@@ -1,6 +1,6 @@
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.Utilities.stateW
-import sbtrelease.{Version, versionFormatError}
+import sbtrelease.{Version, Versions, versionFormatError}
 
 name := "uber-server"
 organization := "com.mitrakov.self"
@@ -39,20 +39,23 @@ publishTo in ThisBuild := Some(repository)
 lazy val setOldVersion: ReleaseStep = { st: State =>
   val globalVersionString = """ThisBuild / version := "%s""""
   val versionString = """version := "%s""""
-  //val vs: (String, String) = st.get(versions).getOrElse(sys.error("No versions are set! Was this release part executed before inquireVersions?")) // 1.0.6 -> 1.0.7-SNAPSHOT
-  //val selected = selectVersion(vs)
+  val versions = AttributeKey[Versions]("releaseVersions")
+  val vs: (String, String) = st.get(versions).getOrElse(sys.error("No versions are set! Was this release part executed before inquireVersions?")) // 1.0.6 -> 1.0.7-SNAPSHOT
+  //val currentSnapshot = selectVersion(vs)
+  val current = vs._1
 
   val useGlobal = st.extract.get(releaseUseGlobalVersion)
-  val selected = st.extract.get(if (useGlobal) ThisBuild / version else version)
-  st.log.info("Setting OLD version to '%s'." format selected)
-  val versionStr = (if (useGlobal) globalVersionString else versionString) format selected
+  //val curreentSnapshot: String = st.extract.get(if (useGlobal) ThisBuild / version else version)
+  //val current: String = Version(currentSnapshot) map (_.withoutQualifier.string) getOrElse versionFormatError(currentSnapshot)
+  st.log.info("Setting OLD version to '%s'." format current)
+  val versionStr = (if (useGlobal) globalVersionString else versionString) format current
   //val file = st.extract.get(releaseVersionFile)
   //IO.writeLines(file, Seq(versionStr))
   val baseDir = st.extract.get(baseDirectory)
   val file = baseDir / "previous_version.sbt"
   IO.writeLines(file, List(versionStr))
 
-  //reapply(Seq(if (useGlobal) ThisBuild / version := selected else version := selected), st)
+  //reapply(Seq(if (useGlobal) ThisBuild / version := current else version := current), st)
   st
 }
 
