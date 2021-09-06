@@ -39,9 +39,8 @@ ThisBuild / publishTo := Some(repository)
 
 // release plugin
 val ZeroVersion = "0.0.0"
-val previousVersion = SettingKey[String]("previousVersion", "Previous version string for Mima plugin")
+//val previousVersion = SettingKey[String]("previousVersion", "Previous version string for Mima plugin")
 val previousVersionFile = SettingKey[File]("previousVersionFile", "Previous version file for Mima plugin")
-previousVersion := ZeroVersion
 previousVersionFile := baseDirectory.value / "previous_version"
 
 val readPreviousVersion: ReleaseStep = { st: State =>
@@ -49,17 +48,16 @@ val readPreviousVersion: ReleaseStep = { st: State =>
   if (file.exists()) {
     val version = IO.readLines(file).headOption getOrElse ZeroVersion
     st.log.info(s"Previous version found: $version")
-    reapply(Seq(previousVersion := version), st)
+    reapply(Seq(mimaPreviousArtifacts := Set(organization.value %% moduleName.value % version)), st)
   } else st
 }
 
 val checkBinaryIncompatibilities: ReleaseStep = { st: State =>
-  st.extract.get(previousVersion) match {
-    case ZeroVersion => st
-    case version =>
-      st.log.info(s"Starting Mima plugin to check current build with version $version")
-      mimaPreviousArtifacts := Set(organization.value %% moduleName.value % version)
+  st.extract.get(mimaPreviousArtifacts).toList match {
+    case head :: _ =>
+      st.log.info(s"Starting Mima plugin to check current build with version ${head.revision}")
       releaseStepTask(mimaReportBinaryIssues)(st)
+    case _ => st
   }
 }
 
@@ -89,7 +87,7 @@ val commitPreviousVersion: ReleaseStep = { st: State =>
   vcs.add(relativePath) !! log
   val status = vcs.status.!!.trim
   if (status.nonEmpty) {
-    val prevVersion = st.extract.get(previousVersion)
+    val prevVersion = st.extract.get(mimaPreviousArtifacts).headOption.map(_.revision) getOrElse ZeroVersion
     val message = s"Setting previous version to $prevVersion"
     st.log.info(s"Preparing commit with message: $message")
     vcs.commit(message, sign, signOff) ! log
