@@ -21,6 +21,7 @@ object Calculator {
       "Lux" -> (distance * lux).toInt,
       "Van" -> (distance * van).toInt,
       "Kids" -> (distance * kids).toInt,
+      "Gays" -> (distance * kids).toInt,
     )
   }
 
