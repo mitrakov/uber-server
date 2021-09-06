@@ -111,10 +111,21 @@ previousVersion := "0.0.0"
 def readPreviousVersion: ReleaseStep = { st: State =>
   val baseDir = st.extract.get(baseDirectory)
   val file = baseDir / "previous_version"
-  val v = IO.readLines(file).head // TODO
-  reapply(Seq(previousVersion := v), st)
+  if (file.exists()) {
+    val v = IO.readLines(file).headOption getOrElse "0.0.0"
+    reapply(Seq(previousVersion := v), st)
+  } else st
 }
 // === eof read v
+
+// check file
+def checkBinaryIncompatibilities: ReleaseStep = { st: State =>
+  st.extract.get(previousVersion) match {
+    case "0.0.0" => releaseStepTask(mimaReportBinaryIssues)(st)
+    case _ => st
+  }
+}
+// === eof check file
 
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,              // : ReleaseStep
@@ -122,7 +133,7 @@ releaseProcess := Seq[ReleaseStep](
   runClean,                               // : ReleaseStep
   runTest,                                // : ReleaseStep
   readPreviousVersion,
-  releaseStepTask(mimaReportBinaryIssues),
+  checkBinaryIncompatibilities,
   setPreviousVersion,
   commitPreviousVersion,
   setReleaseVersion,                      // : ReleaseStep
