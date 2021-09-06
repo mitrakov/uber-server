@@ -38,15 +38,13 @@ resolvers += repository
 ThisBuild / publishTo := Some(repository)
 
 // release plugin
-val ZeroVersion = "0.0.0"
-//val previousVersion = SettingKey[String]("previousVersion", "Previous version string for Mima plugin")
 val previousVersionFile = SettingKey[File]("previousVersionFile", "Previous version file for Mima plugin")
 previousVersionFile := baseDirectory.value / "previous_version"
 
 val readPreviousVersion: ReleaseStep = { st: State =>
   val file = st.extract.get(previousVersionFile)
   if (file.exists()) {
-    val version = IO.readLines(file).headOption getOrElse ZeroVersion
+    val version = IO.readLines(file).headOption getOrElse sys.error(s"Cannot read $file")
     st.log.info(s"Previous version found: $version")
     reapply(Seq(mimaPreviousArtifacts := Set(organization.value %% moduleName.value % version)), st)
   } else st
@@ -62,12 +60,10 @@ val checkBinaryIncompatibilities: ReleaseStep = { st: State =>
 }
 
 val setPreviousVersion: ReleaseStep = { st: State =>
-  val vs: (String, String) = st.get(versions) getOrElse sys.error("This release step must be after inquireVersions")
-  val current = vs._1
-
-  st.log.info(s"Setting previous version to '$current'")
+  val version = st.get(versions).getOrElse(sys.error("This release step must be after inquireVersions"))._1
+  st.log.info(s"Setting previous version to '$version'")
   val file = st.extract.get(previousVersionFile)
-  IO.writeLines(file, List(current))
+  IO.writeLines(file, List(version))
   st
 }
 
@@ -87,8 +83,8 @@ val commitPreviousVersion: ReleaseStep = { st: State =>
   vcs.add(relativePath) !! log
   val status = vcs.status.!!.trim
   if (status.nonEmpty) {
-    val prevVersion = st.extract.get(mimaPreviousArtifacts).headOption.map(_.revision) getOrElse ZeroVersion
-    val message = s"Setting previous version to $prevVersion"
+    val version = st.get(versions).getOrElse(sys.error("This release step must be after inquireVersions"))._1
+    val message = s"Setting previous version to '$version'"
     st.log.info(s"Preparing commit with message: $message")
     vcs.commit(message, sign, signOff) ! log
   }
