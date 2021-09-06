@@ -121,8 +121,8 @@ def readPreviousVersion: ReleaseStep = { st: State =>
 // check file
 def checkBinaryIncompatibilities: ReleaseStep = { st: State =>
   st.extract.get(previousVersion) match {
-    case "0.0.0" => releaseStepTask(mimaReportBinaryIssues)(st)
-    case _ => st
+    case "0.0.0" => st
+    case _ => releaseStepTask(mimaReportBinaryIssues)(st)
   }
 }
 // === eof check file
