@@ -1,14 +1,15 @@
 import sbt._
-import sbt.Keys.{baseDirectory, packageOptions}
+import sbt.Keys.{baseDirectory, moduleName, organization, packageOptions}
 import sbt.Package.ManifestAttributes
 import sbtrelease.ReleasePlugin.autoImport.ReleaseKeys.versions
 import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, releaseProcess, releaseVcs, releaseVcsSign, releaseVcsSignOff}
 import sbtrelease.ReleaseStateTransformations._
 import sbtrelease.Utilities.stateW
+import com.typesafe.tools.mima.plugin.MimaPlugin.autoImport.mimaPreviousArtifacts
 import scala.sys.process.ProcessLogger
 
 object Release {
-  val previousVersion = SettingKey[String]("previousVersion", "Previous version for Mima plugin")
+  val previousVersion = SettingKey[Set[String]]("previousVersion", "Previous version for Mima plugin")
 
   val commitPreviousVersion: ReleaseStep = { st: State =>
     val log = new ProcessLogger {
@@ -28,7 +29,7 @@ object Release {
     val signOff = st.extract.get(releaseVcsSignOff)
     val relativePath = IO.relativize(base, file) getOrElse s"Version file [$file] is outside of this VCS repository with base directory [$base]"
 
-    IO.writeLines(file, List(s"""ThisBuild / Release.previousVersion := "$version""""))
+    IO.writeLines(file, List(s"""ThisBuild / Release.previousVersion := Set("$version")"""))
 
     vcs.add(relativePath) !! log
     val status = vcs.status.!!.trim
@@ -39,6 +40,8 @@ object Release {
   }
 
   val settings: Seq[Def.Setting[_]] = Seq(
+    previousVersion := Set.empty,
+    mimaPreviousArtifacts := previousVersion.value.map(v => organization.value %% moduleName.value % v),
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
