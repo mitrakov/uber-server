@@ -1,1 +1,1 @@
-ThisBuild / Release.previousVersion := Set("1.0.27")
+ThisBuild / Release.previousVersion := Set("1.0.28")
