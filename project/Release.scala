@@ -29,7 +29,7 @@ object Release {
     val signOff = st.extract.get(releaseVcsSignOff)
     val relativePath = IO.relativize(base, file) getOrElse s"Version file [$file] is outside of this VCS repository with base directory [$base]"
 
-    IO.writeLines(file, List(s"""ThisBuild / Release.previousVersion := Set("$version")"""))
+    IO.writeLines(file, List(s"""ThisBuild / Release.previousVersion := Set("$version") // set this to Set() to deploy breaking changes"""))
 
     vcs.add(relativePath) !! log
     val status = vcs.status.!!.trim
