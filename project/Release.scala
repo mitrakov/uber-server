@@ -40,7 +40,7 @@ object Release {
   }
 
   val settings: Seq[Def.Setting[_]] = Seq(
-    mimaPreviousArtifacts := previousVersion.??(Set.empty).value.map(v => organization.value %% moduleName.value % v),
+    ThisBuild / mimaPreviousArtifacts := previousVersion.??(Set.empty).value.map(v => organization.value %% moduleName.value % v),
     releaseProcess := Seq[ReleaseStep](
       checkSnapshotDependencies,
       inquireVersions,
